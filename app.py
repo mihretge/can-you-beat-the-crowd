@@ -311,7 +311,7 @@ elif page == "Host controls":
         st.subheader("Share the quiz")
         app_url = st.text_input(
             "Public app URL",
-            value="https://can-you-beat-the-crowd-uqs3hb434rfecdynk3etz.streamlit.app",
+            value="https://can-you-beat-the-crowd-uqs3hth434rfecdxnk3etz.streamlit.app/",,
         )
         if app_url.strip():
             st.image(qr_bytes(app_url.strip()), caption="Scan to open the quiz", width=220)
