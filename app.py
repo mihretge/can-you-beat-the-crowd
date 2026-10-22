@@ -225,52 +225,109 @@ if page == "Submit guesses":
                         "A submission has already been recorded from this browser."
                     )
 
+
 elif page == "Live results":
-    st.subheader("Crowd results")
+    st.subheader("🎯 The Crowd vs. The Truth")
     st.caption(
-        "Group statistics only. Individual guesses and individual rankings are not shown."
+        "See how individual guesses compare with the group's average. "
+        "Individual guesses and rankings are never shown."
     )
+
     data = get_data()
 
     if data.empty:
         st.info("No guesses have been submitted yet.")
     else:
-        st.metric("Total submissions", len(data))
+        st.metric("Total participants", len(data))
         revealed = setting("revealed", "0") == "1"
 
         for key, question in QUESTIONS.items():
             st.markdown(f"### {question['title']}")
-            mean_value = float(data[key].mean())
-            median_value = float(data[key].median())
+
+            guesses = data[key]
+            minimum = float(guesses.min())
+            maximum = float(guesses.max())
+            mean_value = float(guesses.mean())
+            median_value = float(guesses.median())
+
+            st.markdown("**The guesses from our group**")
 
             col1, col2 = st.columns(2)
             with col1:
-                st.metric("Group mean", f"{mean_value:,.1f}")
+                st.metric(
+                    "Lowest guess",
+                    f"{minimum:,.1f} {question['unit']}"
+                )
             with col2:
-                st.metric("Group median", f"{median_value:,.1f}")
+                st.metric(
+                    "Highest guess",
+                    f"{maximum:,.1f} {question['unit']}"
+                )
+
+            col3, col4 = st.columns(2)
+            with col3:
+                st.metric(
+                    "Group average",
+                    f"{mean_value:,.1f} {question['unit']}"
+                )
+            with col4:
+                st.metric(
+                    "Group median",
+                    f"{median_value:,.1f} {question['unit']}"
+                )
 
             if revealed:
                 actual = question["actual"]
-                difference = mean_value - actual
-                absolute_difference = abs(difference)
-                if difference > 0:
-                    comparison = f"{absolute_difference:,.1f} above the actual answer"
-                elif difference < 0:
-                    comparison = f"{absolute_difference:,.1f} below the actual answer"
-                else:
-                    comparison = "Exactly on the actual answer"
 
-                st.markdown(
-                    f"""
-                    <div class="answer-card">
-                        <div>Correct answer: <strong>{question['actual_display']}</strong></div>
-                        <div>Group mean difference: <strong>{comparison}</strong></div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
+                st.markdown("**How close were we to the truth?**")
+
+                col5, col6, col7 = st.columns(3)
+                with col5:
+                    st.metric(
+                        "Lowest guess difference",
+                        f"{abs(minimum - actual):,.1f} {question['unit']}"
+                    )
+                with col6:
+                    st.metric(
+                        "Highest guess difference",
+                        f"{abs(maximum - actual):,.1f} {question['unit']}"
+                    )
+                with col7:
+                    st.metric(
+                        "Average difference",
+                        f"{abs(mean_value - actual):,.1f} {question['unit']}"
+                    )
+
+                st.success(
+                    f"Actual answer: {question['actual_display']}"
                 )
+
+                if abs(mean_value - actual) < min(
+                    abs(minimum - actual), abs(maximum - actual)
+                ):
+                    st.info(
+                        "The group average is closer to the actual answer "
+                        "than both the lowest and highest guesses!"
+                    )
+                elif abs(mean_value - actual) < (
+                    abs(minimum - actual) + abs(maximum - actual)
+                ) / 2:
+                    st.info(
+                        "The group average is closer to the truth than "
+                        "the average distance of the two extreme guesses."
+                    )
+                else:
+                    st.info(
+                        "The group average is not always closest to the truth. "
+                        "Let's see how our guesses compare!"
+                    )
             else:
-                st.caption("The correct answer will appear after the host reveals it.")
+                st.caption(
+                    "The correct answer and differences will appear "
+                    "when the host reveals the answers."
+                )
+
+            st.divider()
 
 elif page == "Host controls":
     st.subheader("Host controls")
